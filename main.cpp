@@ -7,6 +7,11 @@ using namespace std;
 
 void task1(const string&);
 void task2(const string&);
+struct Bits
+{
+    int zero;
+    int one;
+};
 
 int main() {
     string path;
@@ -23,10 +28,10 @@ int main() {
         {
             fileStream.close();
             cout << "File successfully opened!\n";
-            cout << "First task result - ";
+            cout << "First task data:\n";
             task1(path);
 
-            cout << "Second task result - ";
+            cout << "Second task data:\n";
             task2(path);
 
             break;
@@ -41,169 +46,142 @@ int main() {
     }while(confirmChar == 'm');
 }
 
-struct Bits
-{
-    int zero;
-    int one;
-};
 void task1(const string &path)
 {
-    Bits bitsCount[12] = {0};
     fstream stream;
 
+    vector<string> inputNums;
+    int inputNumsSize = 0;
     stream.open(path);
-    string currentBinary;
-    int k = 1;
     while(!stream.eof())
     {
-        getline(stream, currentBinary);
-        for(int i = 0; i < 12; i++)
-        {
-            int currentInt = (int)currentBinary[i] - 48;
-            if(currentInt == 1) bitsCount[i].one++;
-            else bitsCount[i].zero++;
-        }
+        inputNumsSize++;
+        inputNums.resize(inputNumsSize);
+        getline(stream, inputNums[inputNumsSize - 1]);
     }
     stream.close();
 
-    string gammaRateBin, epsRateBin;
-    gammaRateBin.resize(12); epsRateBin.resize(12);
+    const size_t binLength = inputNums[0].size();
+    vector<Bits> bitsCount; bitsCount.resize(binLength);
 
-    for(int i = 0; i < 12; i++)
-        if(bitsCount[i].one > bitsCount[i].zero)
+    for(string num : inputNums)
+        for(int idx = 0; idx < binLength; idx++)
         {
-            gammaRateBin[i] = '1';
-            epsRateBin[i] = '0';
+            int currentBit = (int)num[idx] - 48;
+            if(currentBit == 1) bitsCount[idx].one++;
+            else bitsCount[idx].zero++;
+        }
+
+    string gammaRateBin, epsRateBin;
+    gammaRateBin.resize(binLength); epsRateBin.resize(binLength);
+
+    for(int idx = 0; idx < binLength; idx++)
+        if(bitsCount[idx].one > bitsCount[idx].zero)
+        {
+            gammaRateBin[idx] = '1';
+            epsRateBin[idx] = '0';
         }
         else
         {
-            gammaRateBin[i] = '0';
-            epsRateBin[i] = '1';
+            gammaRateBin[idx] = '0';
+            epsRateBin[idx] = '1';
         }
 
-    unsigned long gammaRate = bitset<64>(gammaRateBin).to_ulong(), epsRate = bitset<64>(epsRateBin).to_ulong();
+    unsigned long gammaRate, epsRate;
+    gammaRate = bitset<64>(gammaRateBin).to_ulong();
+    epsRate = bitset<64>(epsRateBin).to_ulong();
 
-    cout << gammaRate * epsRate << '\n';
+    cout << "Gamma rate - " << gammaRate << '\n';
+    cout << "Epsilon rate - " << epsRate << '\n';
+    cout << "Result - " << gammaRate * epsRate << '\n';
 }
 
 void task2(const string &path)
 {
     fstream stream;
-    vector<string> binNumbers;
-    stream.open(path);
+    vector<string> inputNums;
+    int inputNumsSize = 0;
 
-    int k = 1;
-    binNumbers.resize(k);
+    stream.open(path);
     while(!stream.eof())
     {
-        binNumbers.resize(k);
-        getline(stream, binNumbers[k - 1]);
-        k++;
+        inputNumsSize++;
+        inputNums.resize(inputNumsSize);
+        getline(stream, inputNums[inputNumsSize - 1]);
     }
     stream.close();
 
-    vector<string> ogRate;
-    ogRate.resize(binNumbers.size());
-    int o = 0;
-    for(const string& f : binNumbers)
+    const size_t binLength = inputNums[0].size();
+
+    vector<string> ogRateBin, co2RateBin;
+    ogRateBin.resize(inputNumsSize);
+    co2RateBin.resize(inputNumsSize);
+
+    for(int idx = 0; idx < inputNumsSize; idx++)
     {
-        ogRate[o] = f;
-        o++;
+        ogRateBin[idx] = inputNums[idx];
+        co2RateBin[idx] = inputNums[idx];
     }
 
-    int m = 0;
-    while(ogRate.size() != 1)
+    int position = 0;
+    while(position != binLength)
     {
-        int zero(0), one(0);
-        for(string j : ogRate)
-        {
-                int currentInt = (int)j[m] - 48;
-                if(currentInt == 1) one++;
-                else zero++;
-        }
+        int zeroBitCount[2] = {}, oneBitCount[2] = {};
+        for(string ogRateBinStr : ogRateBin)
+            if(ogRateBinStr[position] == '1') oneBitCount[0]++;
+            else zeroBitCount[0]++;
+        for(string co2RateBinStr : co2RateBin)
+            if(co2RateBinStr[position] == '1') oneBitCount[1]++;
+            else zeroBitCount[1]++;
 
-        char bitCriteria;
-        if(one >= zero)
-        {
-            bitCriteria = '1';
-        }
-        else
-        {
-            bitCriteria = '0';
-        }
+        char currentOgRateBitCriteria, currentCo2RateBitCriteria;
+        currentOgRateBitCriteria = oneBitCount[0] >= zeroBitCount[0] ? '1' : '0';
+        currentCo2RateBitCriteria = oneBitCount[1] >= zeroBitCount[1] ? '0' : '1';
 
-        bool isAllAtCriteria = false;
-        int i = 0;
-        while(!isAllAtCriteria)
+        bool isAllStrUnderCriteria = false;
+        int ogRateIdx = 0;
+        int co2RateIdx = 0;
+
+        while(!isAllStrUnderCriteria)
         {
-            if(ogRate[i].at(m) != bitCriteria)
+            if(ogRateBin[ogRateIdx][position] != currentOgRateBitCriteria && ogRateBin.size() != 1)
             {
-                ogRate.erase(ogRate.begin() + i);
-                i = 0;
-                isAllAtCriteria = true;
-
-                for(string k : ogRate)
-                    if(k.at(m) != bitCriteria)
+                ogRateBin.erase(ogRateBin.begin() + ogRateIdx);
+                isAllStrUnderCriteria = true;
+                
+                for(int idx = ogRateIdx; idx < ogRateBin.size(); idx++)
+                    if(ogRateBin[idx][position] != currentOgRateBitCriteria)
                     {
-                        isAllAtCriteria = false;
+                        ogRateIdx = idx == 0 ? 0 : idx;
+                        isAllStrUnderCriteria = false;
                         break;
                     }
             }
-            else i++;
-        }
-        m++;
-    }
+            else ogRateIdx++;
 
-    vector<string> co2Rate;
-    co2Rate.resize(binNumbers.size());
-    int o1 = 0;
-    for(const string& f : binNumbers)
-    {
-        co2Rate[o1] = f;
-        o1++;
-    }
-    int l = 0;
-    while(co2Rate.size() != 1)
-    {
-        int zero(0), one(0);
-        for(string j : co2Rate)
-        {
-            int currentInt = (int)j[l] - 48;
-            if(currentInt == 1) one++;
-            else zero++;
-        }
-
-        char bitCriteria;
-        if(zero <= one)
-        {
-            bitCriteria = '0';
-        }
-        else
-        {
-            bitCriteria = '1';
-        }
-
-        bool isAllAtCriteria = false;
-        int i = 0;
-        while(!isAllAtCriteria)
-        {
-            if(co2Rate[i].at(l) != bitCriteria)
+            if(co2RateBin[co2RateIdx][position] != currentCo2RateBitCriteria && co2RateBin.size() != 1)
             {
-                co2Rate.erase(co2Rate.begin() + i);
-                i = 0;
-                isAllAtCriteria = true;
+                co2RateBin.erase(co2RateBin.begin() + co2RateIdx);
+                isAllStrUnderCriteria = true;
 
-                for(string u : co2Rate)
-                    if(u.at(l) != bitCriteria)
-                        isAllAtCriteria = false;
+                for(int idx = co2RateIdx; idx < co2RateBin.size(); idx++)
+                    if(co2RateBin[idx][position] != currentCo2RateBitCriteria)
+                    {
+                        co2RateIdx = idx == 0 ? 0 : idx;
+                        isAllStrUnderCriteria = false;
+                        break;
+                    }
             }
-            else i++;
+            else co2RateIdx++;
         }
-
-        l++;
+        position++;
     }
 
-    unsigned long ogRateInt = bitset<64>(ogRate[0]).to_ulong(), co2RateInt = bitset<64>(co2Rate[0]).to_ulong();
+    unsigned long ogRateInt, co2RateInt;
+    ogRateInt = bitset<64>(ogRateBin[0]).to_ulong();
+    co2RateInt = bitset<64>(co2RateBin[0]).to_ulong();
 
-    cout << ogRateInt * co2RateInt;
+    cout << "Oxygen gen rate - " << ogRateInt << '\n';
+    cout << "CO2 scrubber rate - " << co2RateInt << '\n';
+    cout << "Result - " << ogRateInt * co2RateInt << '\n';
 }
